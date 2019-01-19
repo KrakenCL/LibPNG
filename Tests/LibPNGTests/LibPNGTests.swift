@@ -29,11 +29,72 @@ final class LibPNGTests: XCTestCase {
         }
         
         let image = try! Image(width: 300, height: 200, colorType: ColorType.greyscale, bitDepth: 8, pixels: pixels)
-
         try! image.write(to: URL(string: "/tmp/greyscaleImage.png")!)
     }
 
+    func testWriteDoubleImage() {
+        var pixels = [Double]()
+        
+        for _ in 0..<200 {
+            for _ in 0..<300 {
+                pixels.append(drand48())
+            }
+        }
+        
+        let image = try! Image(width: 300, height: 200, colorType: .greyscale, pixelValues: pixels)
+        try! image.write(to: URL(string: "/tmp/greyscaleDoubleNormalisaedImage.png")!)
+    }
+
+    func testWriteDoubleColoredImage() {
+        var pixels = [Double]()
+        
+        for r in 0..<200 {
+            for _ in 0..<300  {
+                if r % 2 == 0 {
+                    pixels.append(0.25)
+                    pixels.append(0.75)
+                    pixels.append(0.25)
+                } else {
+                    pixels.append(drand48())
+                    pixels.append(drand48())
+                    pixels.append(drand48())
+                }
+            }
+        }
+        
+        let image = try! Image(width: 300, height: 200, colorType: .rgb, pixelValues: pixels)
+        try! image.write(to: URL(string: "/tmp/greyscaleDoubleColoredNormalisaedImage.png")!)
+    }
+    
+    func testGetImageData() {
+        var pixels = [Double]()
+        
+        for r in 0..<200 {
+            for _ in 0..<300  {
+                if r % 2 == 0 {
+                    pixels.append(0.25)
+                    pixels.append(0.75)
+                    pixels.append(0.25)
+                } else {
+                    pixels.append(drand48())
+                    pixels.append(drand48())
+                    pixels.append(drand48())
+                }
+            }
+        }
+        
+        let image = try! Image(width: 300, height: 200, colorType: .rgb, pixelValues: pixels)
+        if let data = image.data {
+            try! data.write(to: URL(string: "file:///tmp/imageData.png")!)
+        }
+        XCTAssert(image.data != nil)
+    }
     static var allTests = [
+        ("testGetImageData", testGetImageData),
+        ("testWriteDoubleColoredImage", testWriteDoubleColoredImage),
+        ("testWriteDoubleImage", testWriteDoubleImage),
         ("testWriteGreyscaleImage", testWriteGreyscaleImage),
     ]
 }
+
+
