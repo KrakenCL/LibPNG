@@ -25,6 +25,7 @@ public enum LibPNGError: Error {
     case readError
     case incorrectDataSize
     case canNotComputeMaxValue
+    case canNotComputeMinValue
 }
 
 public enum ColorType: Int32, RawRepresentable {
@@ -86,21 +87,30 @@ public class Image {
     public convenience init<P: BinaryFloatingPoint>(width: Int, height: Int, colorType: ColorType, bitDepth: Int = 8, badColor: UInt8 = 0, pixelValues: [P]) throws {
         var pixelValues = pixelValues
         let badPixelIndexes = pixelValues.enumerated().filter { $0.element.isNaN || $0.element.isInfinite }.map { $0.offset }
-
-        guard let maxPixelValue = pixelValues.max() else {
+        
+        var tmpArray = pixelValues
+        for index in badPixelIndexes.reversed() {
+            tmpArray.remove(at: index)
+        }
+        guard let maxPixelValue = tmpArray.max() else {
             throw LibPNGError.canNotComputeMaxValue
         }
-
+        
+        guard let minPixelValue = tmpArray.min() else {
+            throw LibPNGError.canNotComputeMaxValue
+        }
+        
         if badPixelIndexes.count != 0 {
             for index in badPixelIndexes {
-                pixelValues[index] = (P(255) / P(badColor)) * maxPixelValue
+                let value = P(badColor) / P(255) * ((maxPixelValue - minPixelValue) - minPixelValue)
+                pixelValues[index] = value
             }
         }
-
+        
         // Normalization
         var result = [Pixel]()
         pixelValues.forEach { (value) in
-            let pixel = P(255) * value / maxPixelValue
+            let pixel = P(255) * ((value - minPixelValue) / (maxPixelValue - minPixelValue))
             result.append(pixel > 255.0 ? 255 : UInt8(pixel))
         }
         
@@ -186,7 +196,7 @@ extension Image {
                      PNG_FILTER_TYPE_DEFAULT)
         
         png_write_info(ptr, info_ptr)
-
+        
         for rowNumber in 0..<height {
             let rowWidth = width * colorType.components
             let startPixelIndex = rowNumber * rowWidth
