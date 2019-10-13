@@ -89,11 +89,21 @@ final class LibPNGTests: XCTestCase {
         }
         XCTAssert(image.data != nil)
     }
+    
+    
+    func testInitSolidColorImage() {
+        XCTAssertNoThrow(try Image(width: 800, height: 600, colorType: .rgb, pixelValues: [Double](repeating: 0, count: 800 * 600 * 3)))
+        XCTAssertNoThrow(try Image(width: 800, height: 600, colorType: .rgb, pixelValues: [Double](repeating: 0.5, count: 800 * 600 * 3)))
+        XCTAssertNoThrow(try Image(width: 800, height: 600, colorType: .rgb, pixelValues: [Double](repeating: 1, count: 800 * 600 * 3)))
+    }
+    
+    
     static var allTests = [
         ("testGetImageData", testGetImageData),
         ("testWriteDoubleColoredImage", testWriteDoubleColoredImage),
         ("testWriteDoubleImage", testWriteDoubleImage),
         ("testWriteGreyscaleImage", testWriteGreyscaleImage),
+        ("testInitSolidColorImage", testInitSolidColorImage),
     ]
 }
 
