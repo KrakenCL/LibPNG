@@ -109,9 +109,17 @@ public class Image {
         
         // Normalization
         var result = [Pixel]()
-        pixelValues.forEach { (value) in
-            let pixel = P(255) * ((value - minPixelValue) / (maxPixelValue - minPixelValue))
-            result.append(pixel > 255.0 ? 255 : UInt8(pixel))
+        
+        if maxPixelValue == minPixelValue {
+            // Bugfix #1: If these are equal, then `(maxPixelValue - minPixelValue)` is `0`, leading to a division by zero
+            let pixel = 255 * maxPixelValue
+            result = [Pixel](repeating: pixel > 255 ? 255 : UInt8(pixel), count: pixelValues.count)
+        }
+        else {
+            pixelValues.forEach { (value) in
+                let pixel = P(255) * ((value - minPixelValue) / (maxPixelValue - minPixelValue)).substitutingNan(with: 0) // Bugfix #1: If for any other reason this results in NaN, backup to `0`
+                result.append(pixel > 255.0 ? 255 : UInt8(pixel))
+            }
         }
         
         try self.init(width: width, height: height, colorType: colorType, bitDepth: bitDepth, pixels: result)
@@ -206,5 +214,17 @@ extension Image {
         }
         png_write_end(ptr, nil);
         fclose(fp)
+    }
+}
+
+
+
+private extension FloatingPoint {
+    /// Allows you to choose a substitute value for this one, if and only if this one is not-a-number
+    ///
+    /// - Parameter backupValue: The value to return if and only if this is not a number. If this is a number, then
+    ///                          `backupValue` is never evaluated.
+    func substitutingNan(with backupValue: @autoclosure () -> Self) -> Self {
+        return isNaN ? backupValue() : self
     }
 }
